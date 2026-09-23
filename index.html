@@ -764,15 +764,22 @@ function doPost(e) {
         const STUDENTS_COLLECTION = collection(db, 'artifacts', appId, 'public', 'data', 'students');
         const LOGS_COLLECTION = collection(db, 'artifacts', appId, 'public', 'data', 'logs');
 
-        // Application State
-        const DEFAULT_SPREADSHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbx_DEMO_AUTO_SPREADSHEET_SMP/exec';
+        // ==========================================
+        // KONEKSI UTAMA KE DATABASE ABSENSI SMP
+        // ==========================================
+        // Tempelkan URL Google Apps Script Anda di dalam tanda petik di bawah ini:
+        const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbyMHvT7j5QFyMy5_GNkTRs1_YaHzJ8I3zB5i9RhHfHS9MfnZFs8rnGgOHHo8TVxfq0w/exec";
 
+        // Mengambil URL dari penyimpanan lokal atau menggunakan URL default di atas
+        let gasScriptUrl = localStorage.getItem('smp_gas_url') || DEFAULT_GAS_URL;
+
+        // Application State
         const APP_STATE = {
             mainTab: 'scan',
             adminSubTab: 'students',
             attendanceMode: 'masuk',
             jamMasuk: localStorage.getItem('smp_jam_masuk') || '07:00',
-            gasUrl: localStorage.getItem('smp_gas_url') || DEFAULT_SPREADSHEET_ENDPOINT,
+            gasUrl: gasScriptUrl,
             students: [],
             attendanceLogs: [],
             cameraStream: null,
@@ -1313,8 +1320,9 @@ function doPost(e) {
         }
 
         function syncLogToGoogleSheets(record) {
-            if (!APP_STATE.gasUrl) return;
-            fetch(APP_STATE.gasUrl, {
+            const urlToUse = APP_STATE.gasUrl || gasScriptUrl;
+            if (!urlToUse || urlToUse.includes('GANTI_DENGAN_URL_ANDA')) return;
+            fetch(urlToUse, {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
@@ -1450,6 +1458,7 @@ function doPost(e) {
         function saveGasUrl() {
             const url = document.getElementById('gasUrlInput')?.value.trim();
             if (url) {
+                gasScriptUrl = url;
                 APP_STATE.gasUrl = url;
                 localStorage.setItem('smp_gas_url', url);
                 showToast("URL Web App Google Apps Script disimpan", "success");
