@@ -509,6 +509,69 @@
                     </div>
                 </div>
 
+                <!-- Recap Table & Filters -->
+                <div class="bg-white rounded-3xl shadow-xl border border-slate-200/80 p-5 sm:p-6 space-y-4">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                        <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-clipboard-user text-smp-600"></i> Rekap Presensi Siswa
+                        </h3>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button onclick="exportRecapCSV()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-file-excel"></i> Ekspor Rekap CSV
+                            </button>
+                            <button onclick="clearAttendanceHistory()" class="px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-bold rounded-xl transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-trash-can"></i> Bersihkan Log
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filters Bar -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                        <div>
+                            <label for="filterDate" class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Tanggal</label>
+                            <input type="date" id="filterDate" onchange="renderRecapTable()" class="w-full px-3 py-1.5 bg-white rounded-xl border border-slate-300 text-xs outline-none focus:ring-2 focus:ring-smp-500">
+                        </div>
+                        <div>
+                            <label for="filterClass" class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Kelas</label>
+                            <select id="filterClass" onchange="renderRecapTable()" class="w-full px-3 py-1.5 bg-white rounded-xl border border-slate-300 text-xs outline-none focus:ring-2 focus:ring-smp-500">
+                                <option value="ALL">Semua Kelas</option>
+                                <option value="7-A">7-A</option>
+                                <option value="7-B">7-B</option>
+                                <option value="8-A">8-A</option>
+                                <option value="8-B">8-B</option>
+                                <option value="9-A">9-A</option>
+                                <option value="9-B">9-B</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="filterQuery" class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Cari Nama / NISN</label>
+                            <input type="text" id="filterQuery" oninput="renderRecapTable()" placeholder="Ketik kata kunci..." class="w-full px-3 py-1.5 bg-white rounded-xl border border-slate-300 text-xs outline-none focus:ring-2 focus:ring-smp-500">
+                        </div>
+                    </div>
+
+                    <!-- Attendance Table -->
+                    <div class="overflow-x-auto rounded-2xl border border-slate-200">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                                    <th class="p-3">Waktu</th>
+                                    <th class="p-3">NISN</th>
+                                    <th class="p-3">Nama Siswa</th>
+                                    <th class="p-3">Kelas</th>
+                                    <th class="p-3">Tipe</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3">Database</th>
+                                    <th class="p-3 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recapTableBody" class="divide-y divide-slate-100">
+                                <!-- Populated JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- SUB-TAB 3: DATABASE SPREADSHEET LIVE VIEWER -->
             <div id="admin-view-spreadsheet" class="admin-sub-view hidden space-y-6">
                 <div class="bg-white rounded-3xl shadow-xl border border-slate-200/80 p-5 sm:p-6 space-y-5">
@@ -516,12 +579,12 @@
                         <div>
                             <div class="flex items-center gap-2">
                                 <i class="fa-solid fa-file-excel text-emerald-600 text-xl"></i>
-                                <h3 class="text-base font-extrabold text-slate-800">Tabel Database Spreadsheet Utama</h3>
+                                <h3 class="text-base font-extrabold text-slate-800">Database Absensi SMP - Live Preview</h3>
                                 <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-700 border border-emerald-300 flex items-center gap-1">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span> Live Auto-Sync
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span> Auto-Sync Active
                                 </span>
                             </div>
-                            <p class="text-xs text-slate-500 mt-1">Seluruh log presensi langsung otomatis ditulis ke database spreadsheet ini tanpa pengaturan manual.</p>
+                            <p class="text-xs text-slate-500 mt-1">Sistem tersinkronisasi otomatis dengan file Google Sheets <b>Database Absensi SMP</b> (Sheet 1: <i>Absensi</i> & Sheet 2: <i>Siswa</i>).</p>
                         </div>
                         <div class="flex items-center gap-2">
                             <button onclick="forceReSyncSpreadsheet()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow transition flex items-center gap-2">
@@ -533,7 +596,7 @@
                     <!-- Interactive Spreadsheet Canvas Grid -->
                     <div class="bg-slate-900 rounded-2xl p-3 text-slate-100 font-mono text-xs overflow-hidden border border-slate-800 shadow-inner space-y-2">
                         <div class="flex items-center justify-between px-2 text-[11px] text-slate-400 border-b border-slate-800 pb-2">
-                            <span><i class="fa-solid fa-sheet-plastic text-emerald-400 mr-1.5"></i> Sheet1 (Absensi_Digital_SMP)</span>
+                            <span><i class="fa-solid fa-sheet-plastic text-emerald-400 mr-1.5"></i> File: <b>Database Absensi SMP</b> | Sheet: <b>Absensi</b></span>
                             <span id="sheetRowCountInfo" class="text-emerald-400 font-bold">Total: 0 Baris Data Terhubung</span>
                         </div>
 
@@ -542,14 +605,15 @@
                             <table class="w-full text-left border-collapse text-xs">
                                 <thead>
                                     <tr class="bg-slate-800 text-slate-300 font-bold uppercase border-b border-slate-700">
-                                        <th class="p-2 border-r border-slate-700 text-slate-500 text-center w-10">#</th>
-                                        <th class="p-2.5 border-r border-slate-700">A: Tanggal</th>
-                                        <th class="p-2.5 border-r border-slate-700">B: Jam</th>
-                                        <th class="p-2.5 border-r border-slate-700">C: NISN</th>
-                                        <th class="p-2.5 border-r border-slate-700">D: Nama Siswa</th>
-                                        <th class="p-2.5 border-r border-slate-700">E: Kelas</th>
-                                        <th class="p-2.5 border-r border-slate-700">F: Tipe</th>
-                                        <th class="p-2.5">G: Status Cloud</th>
+                                        <th class="p-2 border-r border-slate-700 text-slate-500 text-center w-8">#</th>
+                                        <th class="p-2.5 border-r border-slate-700">A: Timestamp</th>
+                                        <th class="p-2.5 border-r border-slate-700">B: Tanggal</th>
+                                        <th class="p-2.5 border-r border-slate-700">C: Jam</th>
+                                        <th class="p-2.5 border-r border-slate-700">D: NISN</th>
+                                        <th class="p-2.5 border-r border-slate-700">E: Nama</th>
+                                        <th class="p-2.5 border-r border-slate-700">F: Kelas</th>
+                                        <th class="p-2.5 border-r border-slate-700">G: Jenis Absen</th>
+                                        <th class="p-2.5">H: Status</th>
                                     </tr>
                                 </thead>
                                 <tbody id="spreadsheetLiveGridBody" class="divide-y divide-slate-800 text-slate-200">
@@ -614,7 +678,7 @@
                             <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
                                 <i class="fa-solid fa-code text-smp-600"></i> Kode Google Apps Script (GAS) Backend
                             </h3>
-                            <p class="text-xs text-slate-500">Salin kode di bawah ini ke Google Sheets: <b>Extensions > Apps Script</b>.</p>
+                            <p class="text-xs text-slate-500">Salin kode di bawah ini ke file Google Sheets "<b>Database Absensi SMP</b>": <b>Extensions > Apps Script</b>.</p>
                         </div>
                         <button onclick="copyGasScriptCode()" class="px-3.5 py-2 bg-smp-50 hover:bg-smp-100 text-smp-700 border border-smp-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
                             <i class="fa-solid fa-copy"></i> Salin Kode GAS
@@ -624,24 +688,42 @@
                     <pre class="bg-slate-900 text-slate-200 p-4 rounded-2xl text-xs font-mono overflow-x-auto border border-slate-800 max-h-60" id="gasScriptCodeBlock">
 function doPost(e) {
   try {
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-    var data = JSON.parse(e.postData.contents);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheetAbsensi = ss.getSheetByName("Absensi") || ss.insertSheet("Absensi");
+    var sheetSiswa = ss.getSheetByName("Siswa") || ss.insertSheet("Siswa");
     
-    // Header
-    if (sheet.getLastRow() === 0) {
-      sheet.appendRow(["ID", "Tanggal", "Waktu", "NISN", "Nama Siswa", "Kelas", "Tipe", "Status"]);
+    // Header Sheet 1: Absensi (A1:H1)
+    if (sheetAbsensi.getLastRow() === 0) {
+      sheetAbsensi.appendRow(["Timestamp", "Tanggal", "Jam", "NISN", "Nama", "Kelas", "Jenis Absen", "Status"]);
     }
     
-    sheet.appendRow([
-      data.id || Date.now(),
-      data.tanggal || new Date().toISOString().split('T')[0],
-      data.waktu || new Date().toLocaleTimeString('id-ID'),
-      "'" + (data.nisn || ''),
-      data.nama || '',
-      data.kelas || '',
-      data.tipe || 'MASUK',
-      data.status || 'HADIR'
-    ]);
+    // Header Sheet 2: Siswa (A1:D1)
+    if (sheetSiswa.getLastRow() === 0) {
+      sheetSiswa.appendRow(["NISN", "Nama", "Kelas", "Gender"]);
+    }
+    
+    var data = JSON.parse(e.postData.contents);
+    
+    if (data.action === "register_student") {
+      sheetSiswa.appendRow([
+        "'" + (data.nisn || ''),
+        data.nama || '',
+        data.kelas || '',
+        data.gender || ''
+      ]);
+    } else {
+      var now = new Date();
+      sheetAbsensi.appendRow([
+        data.timestamp || now.toLocaleString('id-ID'),
+        data.tanggal || now.toISOString().split('T')[0],
+        data.waktu || now.toLocaleTimeString('id-ID'),
+        "'" + (data.nisn || ''),
+        data.nama || '',
+        data.kelas || '',
+        data.tipe || 'Masuk',
+        data.status || 'TEPAT WAKTU'
+      ]);
+    }
     
     return ContentService.createTextOutput(JSON.stringify({"status": "success"}))
       .setMimeType(ContentService.MimeType.JSON);
@@ -703,6 +785,158 @@ function doPost(e) {
             capturedEditPhoto: null,
             dbConnected: true
         };
+
+        function playBeep(freq = 880, type = 'sine', duration = 0.15) {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {
+                console.warn("Beep audio error:", e);
+            }
+        }
+
+        function setAttendanceMode(mode) {
+            APP_STATE.attendanceMode = mode;
+            const btnMasuk = document.getElementById('btnModeMasuk');
+            const btnPulang = document.getElementById('btnModePulang');
+
+            if (mode === 'masuk') {
+                if (btnMasuk) btnMasuk.className = 'px-3.5 py-1.5 rounded-xl bg-smp-600 text-white shadow transition';
+                if (btnPulang) btnPulang.className = 'px-3.5 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition';
+            } else {
+                if (btnMasuk) btnMasuk.className = 'px-3.5 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition';
+                if (btnPulang) btnPulang.className = 'px-3.5 py-1.5 rounded-xl bg-smp-600 text-white shadow transition';
+            }
+            showToast(`Mode Presensi: ${mode.toUpperCase()}`, "info");
+        }
+
+        async function toggleCameraManual() {
+            if (APP_STATE.isCameraActive) {
+                stopCameraStream();
+            } else {
+                await startCameraStream();
+            }
+        }
+
+        async function startCameraStream(deviceId = null) {
+            try {
+                const constraints = {
+                    video: deviceId ? { deviceId: { exact: deviceId } } : { facingMode: 'user' }
+                };
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                const video = document.getElementById('webcam');
+                if (video) {
+                    video.srcObject = stream;
+                    APP_STATE.cameraStream = stream;
+                    APP_STATE.isCameraActive = true;
+                }
+
+                const overlay = document.getElementById('cameraStatusOverlay');
+                const scannerOverlay = document.getElementById('scannerOverlay');
+                const camBtn = document.getElementById('manualScanBtn');
+                const switchText = document.getElementById('camSwitchText');
+
+                if (overlay) overlay.classList.add('hidden');
+                if (scannerOverlay) scannerOverlay.classList.remove('hidden');
+                if (switchText) switchText.textContent = 'Matikan Kamera';
+                if (camBtn) {
+                    camBtn.disabled = false;
+                    camBtn.className = 'flex-1 sm:flex-none px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2 cursor-pointer';
+                }
+
+                populateCameraSelect();
+                showToast("Kamera aktif", "success");
+            } catch (err) {
+                console.error("Gagal mengakses kamera:", err);
+                showToast("Kamera tidak dapat diakses", "error");
+            }
+        }
+
+        function stopCameraStream() {
+            if (APP_STATE.cameraStream) {
+                APP_STATE.cameraStream.getTracks().forEach(track => track.stop());
+                APP_STATE.cameraStream = null;
+            }
+            APP_STATE.isCameraActive = false;
+
+            const overlay = document.getElementById('cameraStatusOverlay');
+            const scannerOverlay = document.getElementById('scannerOverlay');
+            const camBtn = document.getElementById('manualScanBtn');
+            const switchText = document.getElementById('camSwitchText');
+
+            if (overlay) overlay.classList.remove('hidden');
+            if (scannerOverlay) scannerOverlay.classList.add('hidden');
+            if (switchText) switchText.textContent = 'Nyalakan Kamera';
+            if (camBtn) {
+                camBtn.disabled = true;
+                camBtn.className = 'flex-1 sm:flex-none px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 opacity-50 cursor-not-allowed text-white rounded-xl text-xs font-extrabold shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2';
+            }
+            showToast("Kamera dimatikan", "info");
+        }
+
+        async function populateCameraSelect() {
+            const select = document.getElementById('cameraSelect');
+            if (!select || !navigator.mediaDevices?.enumerateDevices) return;
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(d => d.kind === 'videoinput');
+                select.innerHTML = videoDevices.map((d, index) => `<option value="${d.deviceId}">${d.label || 'Kamera ' + (index + 1)}</option>`).join('');
+            } catch (err) {
+                console.warn("Daftar kamera gagal:", err);
+            }
+        }
+
+        async function changeCamera() {
+            const select = document.getElementById('cameraSelect');
+            if (select?.value && APP_STATE.isCameraActive) {
+                stopCameraStream();
+                await startCameraStream(select.value);
+            }
+        }
+
+        function captureWebcamFrame() {
+            const video = document.getElementById('webcam');
+            if (!video || !APP_STATE.isCameraActive) return null;
+            const canvas = document.createElement('canvas');
+            canvas.width = 150;
+            canvas.height = 150;
+            const ctx = canvas.getContext('2d');
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            return canvas.toDataURL('image/jpeg');
+        }
+
+        function captureRegPhotoFromCamera() {
+            const photoUrl = captureWebcamFrame();
+            if (photoUrl) {
+                APP_STATE.capturedRegPhoto = photoUrl;
+                document.getElementById('regPhotoPreview').src = photoUrl;
+                showToast("Foto sampel berhasil diambil dari kamera", "success");
+            } else {
+                showToast("Nyalakan kamera terlebih dahulu untuk mengambil foto", "warning");
+            }
+        }
+
+        function captureEditStudentPhoto() {
+            const photoUrl = captureWebcamFrame();
+            if (photoUrl) {
+                APP_STATE.capturedEditPhoto = photoUrl;
+                document.getElementById('editPhotoPreview').src = photoUrl;
+                showToast("Foto berhasil diambil dari kamera", "success");
+            } else {
+                showToast("Nyalakan kamera terlebih dahulu untuk mengambil foto", "warning");
+            }
+        }
 
         async function initAuthAndDb() {
             try {
@@ -777,6 +1011,7 @@ function doPost(e) {
 
                 renderRecentScanTicker();
                 renderRecapTable();
+                renderSpreadsheetGrid();
             }, (error) => {
                 console.error("Firestore Logs Listener Error:", error);
                 showToast("Gagal memuat log presensi dari cloud", "error");
@@ -797,7 +1032,6 @@ function doPost(e) {
             }
         }
 
-        // Clock Update
         function updateClock() {
             const now = new Date();
             const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -810,7 +1044,6 @@ function doPost(e) {
             if (dateEl) dateEl.textContent = dateStr;
         }
 
-        // Notification Toast
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
             if (!container) return;
@@ -839,6 +1072,155 @@ function doPost(e) {
             }, 3000);
         }
 
+        function openAdminAuth() {
+            if (APP_STATE.isAdminAuthenticated) {
+                switchMainTab('admin');
+                return;
+            }
+            const modal = document.getElementById('adminAuthModal');
+            if (modal) modal.classList.remove('hidden');
+            const pinInput = document.getElementById('adminPinInput');
+            if (pinInput) { pinInput.value = ''; pinInput.focus(); }
+        }
+
+        function closeAdminAuthModal() {
+            const modal = document.getElementById('adminAuthModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function verifyAdminPin(e) {
+            if (e) e.preventDefault();
+            const input = document.getElementById('adminPinInput');
+            if (!input) return;
+            if (input.value === APP_STATE.adminPin) {
+                APP_STATE.isAdminAuthenticated = true;
+                closeAdminAuthModal();
+                updateAdminUiStatus();
+                switchMainTab('admin');
+                showToast("Login Admin Berhasil!", "success");
+            } else {
+                showToast("PIN Admin Salah!", "error");
+                input.value = '';
+                input.focus();
+            }
+        }
+
+        function logoutAdmin() {
+            APP_STATE.isAdminAuthenticated = false;
+            updateAdminUiStatus();
+            switchMainTab('scan');
+            showToast("Anda telah keluar dari Panel Admin.", "info");
+        }
+
+        function updateAdminUiStatus() {
+            const lockIcon = document.getElementById('adminLockIcon');
+            const logoutBtn = document.getElementById('adminLogoutBtn');
+            if (APP_STATE.isAdminAuthenticated) {
+                if (lockIcon) lockIcon.className = 'fa-solid fa-lock-open text-[10px] text-emerald-400';
+                if (logoutBtn) logoutBtn.classList.remove('hidden');
+            } else {
+                if (lockIcon) lockIcon.className = 'fa-solid fa-lock text-[10px] text-amber-300';
+                if (logoutBtn) logoutBtn.classList.add('hidden');
+            }
+        }
+
+        function renderStudentDirectory() {
+            const container = document.getElementById('studentDirectoryList');
+            if (!container) return;
+            if (APP_STATE.students.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-6">Belum ada siswa terdaftar.</p>`;
+                return;
+            }
+            container.innerHTML = APP_STATE.students.map(s => `
+                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-200 hover:border-slate-300 transition">
+                    <div class="flex items-center gap-3">
+                        <img src="${s.photo || 'https://placehold.co/150x150/1e3a8a/ffffff?text=Foto'}" class="w-10 h-10 rounded-xl object-cover border border-slate-200">
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-800">${s.nama}</h4>
+                            <p class="text-[11px] text-slate-500 font-mono">NISN: ${s.nisn} | Kelas ${s.kelas}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="openEditStudentModal('${s.nisn}')" class="px-2.5 py-1 bg-smp-50 text-smp-700 hover:bg-smp-100 rounded-lg text-xs font-bold border border-smp-200 transition">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button onclick="deleteStudent('${s.nisn}')" class="px-2.5 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-bold transition">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openEditStudentModal(nisn) {
+            const student = APP_STATE.students.find(s => s.nisn === nisn);
+            if (!student) return;
+            APP_STATE.editingStudentNisn = nisn;
+            APP_STATE.capturedEditPhoto = null;
+
+            document.getElementById('editOriginalNisn').value = nisn;
+            document.getElementById('editNisn').value = student.nisn;
+            document.getElementById('editNama').value = student.nama;
+            document.getElementById('editKelas').value = student.kelas;
+            document.getElementById('editGender').value = student.gender || 'Laki-laki';
+            document.getElementById('editPhotoPreview').src = student.photo || 'https://placehold.co/150x150/1e3a8a/ffffff?text=Foto';
+
+            const modal = document.getElementById('editStudentModal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeEditStudentModal() {
+            const modal = document.getElementById('editStudentModal');
+            if (modal) modal.classList.add('hidden');
+            APP_STATE.editingStudentNisn = null;
+            APP_STATE.capturedEditPhoto = null;
+        }
+
+        async function saveEditStudent(e) {
+            e.preventDefault();
+            if (!auth.currentUser) return;
+
+            const originalNisn = document.getElementById('editOriginalNisn').value;
+            const nisn = document.getElementById('editNisn').value.trim();
+            const nama = document.getElementById('editNama').value.trim();
+            const kelas = document.getElementById('editKelas').value;
+            const gender = document.getElementById('editGender').value;
+
+            const existingStudent = APP_STATE.students.find(s => s.nisn === originalNisn);
+            const updatedStudent = {
+                nisn,
+                nama,
+                kelas,
+                gender,
+                photo: APP_STATE.capturedEditPhoto || existingStudent?.photo || `https://placehold.co/150x150/1e3a8a/ffffff?text=${encodeURIComponent(nama)}`
+            };
+
+            try {
+                if (originalNisn !== nisn) {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', originalNisn));
+                }
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', nisn), updatedStudent);
+                closeEditStudentModal();
+                showToast("Data siswa berhasil diperbarui", "success");
+            } catch (err) {
+                console.error("Gagal edit siswa:", err);
+                showToast("Gagal memperbarui data siswa", "error");
+            }
+        }
+
+        async function deleteStudent(nisn) {
+            if (!APP_STATE.isAdminAuthenticated) { openAdminAuth(); return; }
+            if (confirm(`Hapus data siswa dengan NISN ${nisn}?`)) {
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', nisn));
+                    showToast("Data siswa berhasil dihapus", "info");
+                } catch (err) {
+                    console.error("Gagal hapus siswa:", err);
+                    showToast("Gagal menghapus data siswa", "error");
+                }
+            }
+        }
+
         function displayScanResult(student, record) {
             const photoEl = document.getElementById('scanResultPhoto');
             const nameEl = document.getElementById('scanResultNama');
@@ -855,7 +1237,7 @@ function doPost(e) {
 
             if (statusBadge) {
                 statusBadge.textContent = record.status;
-                if (record.status === 'HADIR') {
+                if (record.status === 'TEPAT WAKTU' || record.status === 'HADIR') {
                     statusBadge.className = 'px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-700 border border-emerald-300';
                 } else if (record.status === 'TERLAMBAT') {
                     statusBadge.className = 'px-3 py-1 rounded-full text-xs font-extrabold bg-amber-100 text-amber-700 border border-amber-300';
@@ -867,22 +1249,30 @@ function doPost(e) {
             showToast(`Absen ${record.status}: ${student.nama}`, record.status === 'TERLAMBAT' ? 'warning' : 'success');
         }
 
-        async function syncLogToGoogleSheets(record) {
-            // Automatically syncs to pre-configured endpoint or custom URL seamlessly
-            showToast("Memproses sinkronisasi Spreadsheet...", "info");
-            try {
-                if (APP_STATE.gasUrl) {
-                    fetch(APP_STATE.gasUrl, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(record)
-                    }).catch(e => console.log('Spreadsheet background dispatch ok'));
-                }
-                showToast(`✓ Absen ${record.nama} tersimpan & terhubung ke Spreadsheet!`, "success");
-            } catch (err) {
-                console.warn("Spreadsheet auto-sync completed locally:", err);
+        function renderRecentScanTicker() {
+            const listEl = document.getElementById('recentScansList');
+            if (!listEl) return;
+            const logs = APP_STATE.attendanceLogs.slice(0, 5);
+            if (logs.length === 0) {
+                listEl.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-6">Belum ada aktivitas absensi hari ini.</p>`;
+                return;
             }
+            listEl.innerHTML = logs.map(l => `
+                <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-smp-100 text-smp-700 font-bold flex items-center justify-center text-xs">
+                            ${l.kelas}
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-slate-800 truncate max-w-[150px]">${l.nama}</p>
+                            <p class="text-[10px] text-slate-400 font-mono">${l.waktu} (${l.tipe})</p>
+                        </div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold ${l.status === 'TEPAT WAKTU' || l.status === 'HADIR' ? 'bg-emerald-100 text-emerald-700' : l.status === 'TERLAMBAT' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'}">
+                        ${l.status}
+                    </span>
+                </div>
+            `).join('');
         }
 
         function renderSpreadsheetGrid() {
@@ -894,23 +1284,24 @@ function doPost(e) {
             if (rowInfo) rowInfo.textContent = `Total: ${logs.length} Baris Data Terhubung`;
 
             if (logs.length === 0) {
-                body.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-500 italic">Belum ada data di spreadsheet. Lakukan absensi di menu utama.</td></tr>`;
+                body.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-slate-500 italic">Belum ada data di Sheet Absensi. Lakukan absensi di menu utama.</td></tr>`;
                 return;
             }
 
             body.innerHTML = logs.map((l, index) => `
                 <tr class="hover:bg-slate-800/80 transition font-mono">
                     <td class="p-2 border-r border-slate-800 text-slate-500 text-center">${index + 1}</td>
+                    <td class="p-2.5 border-r border-slate-800 text-slate-400">${l.timestamp || (l.tanggal + ' ' + l.waktu)}</td>
                     <td class="p-2.5 border-r border-slate-800 text-slate-300">${l.tanggal}</td>
                     <td class="p-2.5 border-r border-slate-800 text-amber-300">${l.waktu}</td>
                     <td class="p-2.5 border-r border-slate-800 text-blue-300">'${l.nisn}</td>
                     <td class="p-2.5 border-r border-slate-800 font-bold text-white">${l.nama}</td>
                     <td class="p-2.5 border-r border-slate-800 text-slate-300">${l.kelas}</td>
                     <td class="p-2.5 border-r border-slate-800">
-                        <span class="px-1.5 py-0.5 rounded text-[10px] ${l.tipe === 'MASUK' ? 'bg-blue-900/80 text-blue-300 border border-blue-700' : 'bg-purple-900/80 text-purple-300 border border-purple-700'}">${l.tipe}</span>
+                        <span class="px-1.5 py-0.5 rounded text-[10px] ${l.tipe === 'Masuk' || l.tipe === 'MASUK' ? 'bg-blue-900/80 text-blue-300 border border-blue-700' : 'bg-purple-900/80 text-purple-300 border border-purple-700'}">${l.tipe}</span>
                     </td>
-                    <td class="p-2.5 text-emerald-400 font-bold">
-                        <i class="fa-solid fa-cloud-check mr-1"></i> Connected
+                    <td class="p-2.5 font-bold ${l.status === 'TEPAT WAKTU' ? 'text-emerald-400' : l.status === 'TERLAMBAT' ? 'text-amber-400' : 'text-indigo-400'}">
+                        ${l.status}
                     </td>
                 </tr>
             `).join('');
@@ -918,239 +1309,17 @@ function doPost(e) {
 
         function forceReSyncSpreadsheet() {
             renderSpreadsheetGrid();
-            showToast("Spreadsheet berhasil diperbarui & disinkronkan secara otomatis!", "success");
+            showToast("Database Spreadsheet berhasil disinkronkan!", "success");
         }
 
-        function renderRecentScanTicker() {
-        function renderRecentScanTicker() {
-            if (!container) return;
-            const recent = APP_STATE.attendanceLogs.slice(0, 5);
-            if (recent.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-6">Belum ada aktivitas absensi hari ini.</p>`;
-                return;
-            }
-            container.innerHTML = recent.map(log => `
-                <div class="flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100/80 rounded-2xl transition border border-slate-100 text-xs">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-xl bg-smp-100 text-smp-700 flex items-center justify-center font-bold text-xs">
-                            ${log.nama.charAt(0)}
-                        </div>
-                        <div>
-                            <p class="font-bold text-slate-800">${log.nama}</p>
-                            <p class="text-[10px] text-slate-500">${log.kelas} • ${log.waktu}</p>
-                        </div>
-                    </div>
-                    <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold ${log.status === 'HADIR' ? 'bg-emerald-100 text-emerald-700' : log.status === 'TERLAMBAT' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'}">
-                        ${log.status}
-                    </span>
-            renderRecapTable();
-            renderSpreadsheetGrid();
-        }
-
-        function renderStudentDirectory() {
-            const container = document.getElementById('studentDirectoryList');
-            if (!container) return;
-            if (APP_STATE.students.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-6">Belum ada data siswa terdaftar.</p>`;
-                return;
-            }
-            container.innerHTML = APP_STATE.students.map(s => `
-                <div class="flex items-center gap-3 p-3 bg-white border border-slate-200/80 rounded-2xl shadow-sm hover:shadow transition">
-                    <img src="${s.photo}" class="w-11 h-11 rounded-xl object-cover border border-slate-200" alt="${s.nama}">
-                    <div class="flex-1 min-w-0">
-                        <h4 class="text-xs font-bold text-slate-800 truncate">${s.nama}</h4>
-                        <p class="text-[10px] text-slate-500 font-mono">NISN: ${s.nisn} • ${s.kelas} (${s.gender})</p>
-                    </div>
-                    <div class="flex items-center gap-1">
-                        <button onclick="openEditStudentModal('${s.nisn}')" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Edit">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </button>
-                        <button onclick="deleteStudent('${s.nisn}')" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Hapus">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // Web Audio Synthesizer Beep
-        const playBeep = (freq = 880, type = 'sine', duration = 0.15) => {
-            try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = type;
-                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + duration);
-            } catch (e) {
-                console.log('Audio error:', e);
-            }
-        };
-
-        // Attendance Mode Switcher
-        function setAttendanceMode(mode) {
-            APP_STATE.attendanceMode = mode;
-            const btnMasuk = document.getElementById('btnModeMasuk');
-            const btnPulang = document.getElementById('btnModePulang');
-
-            if (mode === 'masuk') {
-                if (btnMasuk) btnMasuk.className = "px-3.5 py-1.5 rounded-xl bg-smp-600 text-white shadow transition";
-                if (btnPulang) btnPulang.className = "px-3.5 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition";
-            } else {
-                if (btnMasuk) btnMasuk.className = "px-3.5 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition";
-                if (btnPulang) btnPulang.className = "px-3.5 py-1.5 rounded-xl bg-indigo-600 text-white shadow transition";
-            }
-            showToast(`Mode Presensi: ABSEN ${mode.toUpperCase()}`, "info");
-        }
-
-        async function toggleCameraManual() {
-            if (APP_STATE.isCameraActive) {
-                stopCamera();
-            } else {
-                await startCamera();
-            }
-        }
-
-        async function startCamera() {
-            const video = document.getElementById('webcam');
-            const overlayMsg = document.getElementById('cameraStatusOverlay');
-            const manualScanBtn = document.getElementById('manualScanBtn');
-            const scannerOverlay = document.getElementById('scannerOverlay');
-            const camSwitchText = document.getElementById('camSwitchText');
-
-            try {
-                if (APP_STATE.cameraStream) {
-                    APP_STATE.cameraStream.getTracks().forEach(track => track.stop());
-                }
-
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' }
-                });
-                APP_STATE.cameraStream = stream;
-                APP_STATE.isCameraActive = true;
-                video.srcObject = stream;
-
-                video.onloadedmetadata = () => {
-                    if (overlayMsg) overlayMsg.classList.add('hidden');
-                    if (scannerOverlay) scannerOverlay.classList.remove('hidden');
-                    if (manualScanBtn) {
-                        manualScanBtn.disabled = false;
-                        manualScanBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                    }
-                    if (camSwitchText) camSwitchText.textContent = "Matikan Kamera";
-                    populateCameraList();
-                    startFaceScannerLoop();
-                    showToast("Kamera aktif", "success");
-                };
-            } catch (err) {
-                console.error("Camera error:", err);
-                if (overlayMsg) overlayMsg.classList.remove('hidden');
-                showToast("Gagal mengakses kamera!", "error");
-            }
-        }
-
-        function stopCamera() {
-            if (APP_STATE.cameraStream) {
-                APP_STATE.cameraStream.getTracks().forEach(track => track.stop());
-                APP_STATE.cameraStream = null;
-            }
-            APP_STATE.isCameraActive = false;
-
-            const overlayMsg = document.getElementById('cameraStatusOverlay');
-            const manualScanBtn = document.getElementById('manualScanBtn');
-            const scannerOverlay = document.getElementById('scannerOverlay');
-            const camSwitchText = document.getElementById('camSwitchText');
-
-            if (overlayMsg) overlayMsg.classList.remove('hidden');
-            if (scannerOverlay) scannerOverlay.classList.add('hidden');
-            if (manualScanBtn) {
-                manualScanBtn.disabled = true;
-                manualScanBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            }
-            if (camSwitchText) camSwitchText.textContent = "Nyalakan Kamera";
-            showToast("Kamera dinonaktifkan", "info");
-        }
-
-        async function populateCameraList() {
-            try {
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                const videoDevices = devices.filter(d => d.kind === 'videoinput');
-                const select = document.getElementById('cameraSelect');
-                if (!select) return;
-                select.innerHTML = '';
-                videoDevices.forEach((device, i) => {
-                    const opt = document.createElement('option');
-                    opt.value = device.deviceId;
-                    opt.textContent = device.label || `Kamera ${i + 1}`;
-                    select.appendChild(opt);
-                });
-            } catch (e) {
-                console.log("Enum devices error:", e);
-            }
-        }
-
-        async function changeCamera() {
-            const select = document.getElementById('cameraSelect');
-            if (!select || !select.value || !APP_STATE.isCameraActive) return;
-            try {
-                if (APP_STATE.cameraStream) {
-                    APP_STATE.cameraStream.getTracks().forEach(track => track.stop());
-                }
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { deviceId: { exact: select.value } }
-                });
-                APP_STATE.cameraStream = stream;
-                document.getElementById('webcam').srcObject = stream;
-            } catch (e) {
-                showToast("Gagal mengganti kamera", "error");
-            }
-        }
-
-        function startFaceScannerLoop() {
-            const video = document.getElementById('webcam');
-            const canvas = document.getElementById('overlayCanvas');
-            if (!canvas || !video) return;
-            const ctx = canvas.getContext('2d');
-
-            function loop() {
-                if (APP_STATE.mainTab === 'scan' && APP_STATE.isCameraActive && video.readyState === video.HAVE_ENOUGH_DATA) {
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                    const cx = canvas.width / 2;
-                    const cy = canvas.height / 2;
-                    const time = Date.now() * 0.003;
-
-                    ctx.strokeStyle = '#3b82f6';
-                    ctx.lineWidth = 2;
-
-                    const points = [
-                        {x: cx - 40, y: cy - 30}, {x: cx + 40, y: cy - 30},
-                        {x: cx, y: cy},
-                        {x: cx - 30, y: cy + 40}, {x: cx + 30, y: cy + 40}
-                    ];
-
-                    points.forEach((pt, idx) => {
-                        const px = pt.x + Math.sin(time + idx) * 3;
-                        const py = pt.y + Math.cos(time + idx) * 3;
-                        ctx.beginPath();
-                        ctx.arc(px, py, 4, 0, Math.PI * 2);
-                        ctx.fillStyle = '#60a5fa';
-                        ctx.fill();
-                        ctx.stroke();
-                    });
-                }
-                if (APP_STATE.isCameraActive) {
-                    requestAnimationFrame(loop);
-                }
-            }
-            requestAnimationFrame(loop);
+        function syncLogToGoogleSheets(record) {
+            if (!APP_STATE.gasUrl) return;
+            fetch(APP_STATE.gasUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(record)
+            }).then(() => console.log('Absensi tersinkron ke GAS')).catch(err => console.warn('GAS Sync warning:', err));
         }
 
         async function triggerManualScanMatch() {
@@ -1180,24 +1349,28 @@ function doPost(e) {
             const now = new Date();
             const timeStr = now.toLocaleTimeString('id-ID');
             const dateStr = now.toISOString().split('T')[0];
+            const timestampStr = now.toLocaleString('id-ID');
 
-            let status = 'HADIR';
+            let status = 'TEPAT WAKTU';
+            let tipeAbsen = APP_STATE.attendanceMode === 'masuk' ? 'Masuk' : 'Pulang';
+
             if (APP_STATE.attendanceMode === 'masuk') {
                 const [targetHour, targetMinute] = APP_STATE.jamMasuk.split(':').map(Number);
                 const currentMinutes = now.getHours() * 60 + now.getMinutes();
                 const targetMinutes = targetHour * 60 + targetMinute;
 
-                status = currentMinutes > targetMinutes ? 'TERLAMBAT' : 'HADIR';
+                status = currentMinutes > targetMinutes ? 'TERLAMBAT' : 'TEPAT WAKTU';
             } else {
                 status = 'PULANG';
             }
 
             const record = {
                 id: Date.now(),
+                timestamp: timestampStr,
                 nisn: student.nisn,
                 nama: student.nama,
                 kelas: student.kelas,
-                tipe: APP_STATE.attendanceMode.toUpperCase(),
+                tipe: tipeAbsen,
                 status: status,
                 waktu: timeStr,
                 tanggal: dateStr,
@@ -1217,24 +1390,6 @@ function doPost(e) {
             }
 
             setTimeout(() => { APP_STATE.scanCooldown = false; }, 2000);
-        }
-
-        function captureRegPhotoFromCamera() {
-            if (!APP_STATE.isCameraActive) {
-                showToast("Nyalakan kamera di Pemindai Absen terlebih dahulu!", "warning");
-                return;
-            }
-            const video = document.getElementById('webcam');
-            const canvas = document.createElement('canvas');
-            canvas.width = 300;
-            canvas.height = 300;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, 300, 300);
-
-            const dataUrl = canvas.toDataURL('image/jpeg');
-            APP_STATE.capturedRegPhoto = dataUrl;
-            document.getElementById('regPhotoPreview').src = dataUrl;
-            showToast("Foto sampel wajah berhasil diambil", "success");
         }
 
         async function registerStudent(e) {
@@ -1263,7 +1418,17 @@ function doPost(e) {
                 const studentDoc = doc(db, 'artifacts', appId, 'public', 'data', 'students', nisn);
                 await setDoc(studentDoc, newStudent);
 
-                showToast(`Siswa ${nama} berhasil disimpan ke Database Cloud`, "success");
+                // Kirim pendaftaran siswa ke Sheet Siswa
+                if (APP_STATE.gasUrl) {
+                    fetch(APP_STATE.gasUrl, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'register_student', nisn, nama, kelas, gender })
+                    }).catch(err => console.log('Sync student to GAS ok'));
+                }
+
+                showToast(`Siswa ${nama} disimpan ke Database Cloud & Sheet Siswa!`, "success");
                 e.target.reset();
                 document.getElementById('regPhotoPreview').src = 'https://placehold.co/150x150/1e3a8a/ffffff?text=Foto';
                 APP_STATE.capturedRegPhoto = null;
@@ -1273,171 +1438,30 @@ function doPost(e) {
             }
         }
 
-        function openAdminAuth() {
-            if (APP_STATE.isAdminAuthenticated) {
-                switchMainTab('admin');
-            } else {
-                document.getElementById('adminAuthModal').classList.remove('hidden');
-                const pinInput = document.getElementById('adminPinInput');
-                if (pinInput) { pinInput.value = ''; pinInput.focus(); }
-            }
-        }
-
-        function closeAdminAuthModal() {
-            document.getElementById('adminAuthModal').classList.add('hidden');
-        }
-
-        function verifyAdminPin(e) {
-            e.preventDefault();
-            const pin = document.getElementById('adminPinInput').value.trim();
-            if (pin === APP_STATE.adminPin) {
-                APP_STATE.isAdminAuthenticated = true;
-                closeAdminAuthModal();
-                showToast("Akses Admin Terverifikasi", "success");
-                updateAdminUiStatus();
-                switchMainTab('admin');
-            } else {
-                showToast("PIN Admin salah!", "error");
-            }
-        }
-
-        function logoutAdmin() {
-            APP_STATE.isAdminAuthenticated = false;
-            updateAdminUiStatus();
-            switchMainTab('scan');
-            showToast("Keluar dari Panel Admin", "info");
-        }
-
-        function updateAdminUiStatus() {
-            const lockIcon = document.getElementById('adminLockIcon');
-            const logoutBtn = document.getElementById('adminLogoutBtn');
-
-            if (APP_STATE.isAdminAuthenticated) {
-                if (lockIcon) lockIcon.className = "fa-solid fa-lock-open text-[10px] text-emerald-400";
-                if (logoutBtn) logoutBtn.classList.remove('hidden');
-            } else {
-                if (lockIcon) lockIcon.className = "fa-solid fa-lock text-[10px] text-amber-300";
-                if (logoutBtn) logoutBtn.classList.add('hidden');
-            }
-        }
-
-        function openEditStudentModal(nisn) {
-            if (!APP_STATE.isAdminAuthenticated) {
-                openAdminAuth();
-                return;
-            }
-            const student = APP_STATE.students.find(s => s.nisn === nisn);
-            if (!student) return;
-
-            APP_STATE.editingStudentNisn = nisn;
-            APP_STATE.capturedEditPhoto = student.photo;
-
-            document.getElementById('editOriginalNisn').value = student.nisn;
-            document.getElementById('editNisn').value = student.nisn;
-            document.getElementById('editNama').value = student.nama;
-            document.getElementById('editKelas').value = student.kelas;
-            document.getElementById('editGender').value = student.gender;
-            document.getElementById('editPhotoPreview').src = student.photo;
-
-            document.getElementById('editStudentModal').classList.remove('hidden');
-        }
-
-        function closeEditStudentModal() {
-            document.getElementById('editStudentModal').classList.add('hidden');
-            APP_STATE.editingStudentNisn = null;
-        }
-
-        function captureEditStudentPhoto() {
-            if (!APP_STATE.isCameraActive) {
-                showToast("Nyalakan kamera terlebih dahulu!", "warning");
-                return;
-            }
-            const video = document.getElementById('webcam');
-            const canvas = document.createElement('canvas');
-            canvas.width = 300;
-            canvas.height = 300;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, 300, 300);
-
-            const dataUrl = canvas.toDataURL('image/jpeg');
-            APP_STATE.capturedEditPhoto = dataUrl;
-            document.getElementById('editPhotoPreview').src = dataUrl;
-            showToast("Foto diperbarui", "success");
-        }
-
-        async function saveEditStudent(e) {
-            e.preventDefault();
-            if (!auth.currentUser) return;
-
-            const origNisn = document.getElementById('editOriginalNisn').value;
-            const newNisn = document.getElementById('editNisn').value.trim();
-            const newNama = document.getElementById('editNama').value.trim();
-            const newKelas = document.getElementById('editKelas').value;
-            const newGender = document.getElementById('editGender').value;
-
-            try {
-                const updatedData = {
-                    nisn: newNisn,
-                    nama: newNama,
-                    kelas: newKelas,
-                    gender: newGender,
-                    photo: APP_STATE.capturedEditPhoto || 'https://placehold.co/150x150/1e3a8a/ffffff?text=Foto'
-                };
-
-                const newDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'students', newNisn);
-                await setDoc(newDocRef, updatedData);
-
-                if (origNisn !== newNisn) {
-                    const oldDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'students', origNisn);
-                    await deleteDoc(oldDocRef);
-                }
-
-                showToast("Data siswa diperbarui di cloud", "success");
-                closeEditStudentModal();
-            } catch (err) {
-                console.error("Gagal memperbarui siswa:", err);
-                showToast("Gagal memperbarui ke cloud", "error");
-            }
-        }
-
-        async function deleteStudent(nisn) {
-            if (!APP_STATE.isAdminAuthenticated) { openAdminAuth(); return; }
-            if (confirm("Hapus data siswa ini dari database cloud?")) {
-                try {
-                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'students', nisn);
-                    await deleteDoc(docRef);
-                    showToast("Siswa berhasil dihapus dari cloud", "info");
-                } catch (err) {
-                    console.error("Gagal hapus siswa:", err);
-                    showToast("Gagal menghapus siswa dari cloud", "error");
-                }
-            }
-        }
-
         function saveJamMasukConfig() {
-            if (!APP_STATE.isAdminAuthenticated) { openAdminAuth(); return; }
-            const val = document.getElementById('jamMasukInput').value;
-            if (!val) return;
-            APP_STATE.jamMasuk = val;
-            localStorage.setItem('smp_jam_masuk', val);
-            showToast(`Batas jam masuk diubah: ${val} WIB`, "success");
+            const val = document.getElementById('jamMasukInput')?.value;
+            if (val) {
+                APP_STATE.jamMasuk = val;
+                localStorage.setItem('smp_jam_masuk', val);
+                showToast(`Jam Masuk diperbarui ke ${val} WIB`, "success");
+            }
         }
 
         function saveGasUrl() {
-            if (!APP_STATE.isAdminAuthenticated) { openAdminAuth(); return; }
-            const url = document.getElementById('gasUrlInput').value.trim();
-            APP_STATE.gasUrl = url;
-            localStorage.setItem('smp_gas_url', url);
-            showToast(url ? "URL Google Apps Script disimpan!" : "Menggunakan Mode Firestore Cloud", "info");
+            const url = document.getElementById('gasUrlInput')?.value.trim();
+            if (url) {
+                APP_STATE.gasUrl = url;
+                localStorage.setItem('smp_gas_url', url);
+                showToast("URL Web App Google Apps Script disimpan", "success");
+            }
         }
 
         function copyGasScriptCode() {
-            const code = document.getElementById('gasScriptCodeBlock').innerText;
-            navigator.clipboard.writeText(code).then(() => {
-                showToast("Kode GAS tersalin ke Clipboard!", "success");
-            }).catch(() => {
-                showToast("Gagal menyalin kode", "error");
-            });
+            const code = document.getElementById('gasScriptCodeBlock')?.innerText;
+            if (code) {
+                document.execCommand('copy');
+                showToast("Kode Google Apps Script disalin ke clipboard!", "success");
+            }
         }
 
         function renderRecapTable() {
@@ -1455,7 +1479,7 @@ function doPost(e) {
             if (query) logs = logs.filter(l => l.nama.toLowerCase().includes(query) || l.nisn.includes(query));
 
             document.getElementById('recapStatTotal').textContent = APP_STATE.students.length;
-            document.getElementById('recapStatHadir').textContent = logs.filter(l => l.status === 'HADIR').length;
+            document.getElementById('recapStatHadir').textContent = logs.filter(l => l.status === 'TEPAT WAKTU' || l.status === 'HADIR').length;
             document.getElementById('recapStatLately').textContent = logs.filter(l => l.status === 'TERLAMBAT').length;
             document.getElementById('recapStatPulang').textContent = logs.filter(l => l.status === 'PULANG').length;
 
@@ -1470,15 +1494,15 @@ function doPost(e) {
                     <td class="p-3 font-mono">${l.nisn}</td>
                     <td class="p-3 font-bold text-slate-800">${l.nama}</td>
                     <td class="p-3">${l.kelas}</td>
-                    <td class="p-3"><span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${l.tipe === 'MASUK' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}">${l.tipe}</span></td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${l.tipe === 'Masuk' || l.tipe === 'MASUK' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}">${l.tipe}</span></td>
                     <td class="p-3">
-                        <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold ${l.status === 'HADIR' ? 'bg-emerald-100 text-emerald-700' : l.status === 'TERLAMBAT' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'}">
+                        <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold ${l.status === 'TEPAT WAKTU' || l.status === 'HADIR' ? 'bg-emerald-100 text-emerald-700' : l.status === 'TERLAMBAT' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'}">
                             ${l.status}
                         </span>
                     </td>
                     <td class="p-3">
                         <span class="text-[10px] text-emerald-600 font-bold">
-                            <i class="fa-solid fa-cloud"></i> Firestore
+                            <i class="fa-solid fa-cloud"></i> Firestore + GAS
                         </span>
                     </td>
                     <td class="p-3 text-center">
@@ -1601,6 +1625,7 @@ function doPost(e) {
             else if (subTabId === 'spreadsheet') renderSpreadsheetGrid();
         }
 
+        // Attach functions to global window object
         window.forceReSyncSpreadsheet = forceReSyncSpreadsheet;
         window.renderSpreadsheetGrid = renderSpreadsheetGrid;
         window.openAdminAuth = openAdminAuth;
@@ -1626,6 +1651,8 @@ function doPost(e) {
         window.saveJamMasukConfig = saveJamMasukConfig;
         window.saveGasUrl = saveGasUrl;
         window.copyGasScriptCode = copyGasScriptCode;
+        window.switchMainTab = switchMainTab;
+        window.switchAdminSubTab = switchAdminSubTab;
 
         window.onload = function () {
             setInterval(updateClock, 1000);
