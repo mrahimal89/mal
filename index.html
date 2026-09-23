@@ -711,40 +711,6 @@ function doPost(e) {
         data.kelas || '',
         data.gender || ''
       ]);
-    } else if (data.action === "edit_student") {
-      var lastRow = sheetSiswa.getLastRow();
-      var found = false;
-      if (lastRow > 1) {
-        var values = sheetSiswa.getRange(2, 1, lastRow - 1, 4).getValues();
-        for (var i = 0; i < values.length; i++) {
-          var rowNisn = String(values[i][0]).replace(/^'/, '');
-          if (rowNisn === String(data.originalNisn || data.nisn)) {
-            sheetSiswa.getRange(i + 2, 1, 1, 4).setValues([[
-              "'" + (data.nisn || ''),
-              data.nama || '',
-              data.kelas || '',
-              data.gender || ''
-            ]]);
-            found = true;
-            break;
-          }
-        }
-      }
-      if (!found) {
-        sheetSiswa.appendRow(["'" + (data.nisn || ''), data.nama || '', data.kelas || '', data.gender || '']);
-      }
-    } else if (data.action === "delete_student") {
-      var lastRow = sheetSiswa.getLastRow();
-      if (lastRow > 1) {
-        var values = sheetSiswa.getRange(2, 1, lastRow - 1, 1).getValues();
-        for (var i = 0; i < values.length; i++) {
-          var rowNisn = String(values[i][0]).replace(/^'/, '');
-          if (rowNisn === String(data.nisn)) {
-            sheetSiswa.deleteRow(i + 2);
-            break;
-          }
-        }
-      }
     } else {
       var now = new Date();
       sheetAbsensi.appendRow([
@@ -798,24 +764,20 @@ function doPost(e) {
         const STUDENTS_COLLECTION = collection(db, 'artifacts', appId, 'public', 'data', 'students');
         const LOGS_COLLECTION = collection(db, 'artifacts', appId, 'public', 'data', 'logs');
 
-        // ==========================================
-        // KONEKSI UTAMA KE DATABASE ABSENSI SMP
-        // ==========================================
-        // Tempelkan URL Google Apps Script Anda di dalam tanda petik di bawah ini:
-        const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbyMHvT7j5QFyMy5_GNkTRs1_YaHzJ8I3zB5i9RhHfHS9MfnZFs8rnGgOHHo8TVxfq0w/exec";
+        // Application State with Local Cache Fallbacks
+        const DEFAULT_SPREADSHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyMHvT7j5QFyMy5_GNkTRs1_YaHzJ8I3zB5i9RhHfHS9MfnZFs8rnGgOHHo8TVxfq0w/exec';
+        
+        const cachedStudents = JSON.parse(localStorage.getItem('smp_students_cache') || '[]');
+        const cachedLogs = JSON.parse(localStorage.getItem('smp_logs_cache') || '[]');
 
-        // Mengambil URL dari penyimpanan lokal atau menggunakan URL default di atas
-        let gasScriptUrl = localStorage.getItem('smp_gas_url') || DEFAULT_GAS_URL;
-
-        // Application State
         const APP_STATE = {
             mainTab: 'scan',
             adminSubTab: 'students',
             attendanceMode: 'masuk',
             jamMasuk: localStorage.getItem('smp_jam_masuk') || '07:00',
-            gasUrl: gasScriptUrl,
-            students: [],
-            attendanceLogs: [],
+            gasUrl: localStorage.getItem('smp_gas_url') || DEFAULT_SPREADSHEET_ENDPOINT,
+            students: cachedStudents,
+            attendanceLogs: cachedLogs,
             cameraStream: null,
             isCameraActive: false,
             scanCooldown: false,
@@ -987,8 +949,8 @@ function doPost(e) {
                     await signInAnonymously(auth);
                 }
             } catch (err) {
-                console.warn("Custom token auth failed, falling back to anonymous auth:", err);
-                try { await signInAnonymously(auth); } catch (e) { console.error("Anonymous auth failed:", e); }
+                console.warn("Custom token auth failed, falling back to anonymous auth or local storage:", err);
+                try { await signInAnonymously(auth); } catch (e) { console.warn("Offline/local mode enabled."); }
             }
 
             onAuthStateChanged(auth, (user) => {
@@ -1011,8 +973,8 @@ function doPost(e) {
                 badgeText.textContent = "Firestore Cloud Active";
                 badgeDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
             } else {
-                badgeText.textContent = "Database Offline";
-                badgeDot.className = "w-2 h-2 rounded-full bg-red-400";
+                badgeText.textContent = "Lokal & Spreadsheet Mode";
+                badgeDot.className = "w-2 h-2 rounded-full bg-amber-400";
             }
         }
 
@@ -1028,15 +990,14 @@ function doPost(e) {
                 });
 
                 if (list.length === 0 && APP_STATE.students.length === 0) {
-                    // Seed initial sample data if cloud is empty
                     seedDefaultStudents();
-                } else {
+                } else if (list.length > 0) {
                     APP_STATE.students = list;
+                    localStorage.setItem('smp_students_cache', JSON.stringify(APP_STATE.students));
                     renderStudentDirectory();
                 }
             }, (error) => {
-                console.error("Firestore Students Listener Error:", error);
-                showToast("Gagal memuat data siswa dari cloud", "error");
+                console.warn("Firestore Students Listener Notice:", error);
             });
 
             // 2. Listen to Attendance Logs
@@ -1046,20 +1007,20 @@ function doPost(e) {
                     list.push(docSnap.data());
                 });
 
-                // Sort logs chronologically in memory (newest first)
-                list.sort((a, b) => Number(b.id) - Number(a.id));
-                APP_STATE.attendanceLogs = list;
-
-                renderRecentScanTicker();
-                renderRecapTable();
-                renderSpreadsheetGrid();
+                if (list.length > 0) {
+                    list.sort((a, b) => Number(b.id) - Number(a.id));
+                    APP_STATE.attendanceLogs = list;
+                    localStorage.setItem('smp_logs_cache', JSON.stringify(APP_STATE.attendanceLogs));
+                    renderRecentScanTicker();
+                    renderRecapTable();
+                    renderSpreadsheetGrid();
+                }
             }, (error) => {
-                console.error("Firestore Logs Listener Error:", error);
-                showToast("Gagal memuat log presensi dari cloud", "error");
+                console.warn("Firestore Logs Listener Notice:", error);
             });
         }
 
-        // Seed initial demo data into Firestore
+        // Seed initial demo data
         async function seedDefaultStudents() {
             const initialList = [
                 { nisn: '0081234561', nama: 'Budi Santoso', kelas: '7-A', gender: 'Laki-laki', photo: 'https://placehold.co/150x150/1e3a8a/ffffff?text=Budi' },
@@ -1067,9 +1028,17 @@ function doPost(e) {
                 { nisn: '0081234563', nama: 'Rizky Pratama', kelas: '9-A', gender: 'Laki-laki', photo: 'https://placehold.co/150x150/d97706/ffffff?text=Rizky' }
             ];
 
-            for (const student of initialList) {
-                const studentDoc = doc(db, 'artifacts', appId, 'public', 'data', 'students', student.nisn);
-                await setDoc(studentDoc, student);
+            APP_STATE.students = initialList;
+            localStorage.setItem('smp_students_cache', JSON.stringify(initialList));
+            renderStudentDirectory();
+
+            if (auth.currentUser) {
+                for (const student of initialList) {
+                    try {
+                        const studentDoc = doc(db, 'artifacts', appId, 'public', 'data', 'students', student.nisn);
+                        await setDoc(studentDoc, student);
+                    } catch (e) {}
+                }
             }
         }
 
@@ -1219,7 +1188,6 @@ function doPost(e) {
 
         async function saveEditStudent(e) {
             e.preventDefault();
-            if (!auth.currentUser) return;
 
             const originalNisn = document.getElementById('editOriginalNisn').value;
             const nisn = document.getElementById('editNisn').value.trim();
@@ -1227,65 +1195,54 @@ function doPost(e) {
             const kelas = document.getElementById('editKelas').value;
             const gender = document.getElementById('editGender').value;
 
-            const existingStudent = APP_STATE.students.find(s => s.nisn === originalNisn);
+            const index = APP_STATE.students.findIndex(s => s.nisn === originalNisn);
+            if (index === -1) return;
+
+            const existingStudent = APP_STATE.students[index];
             const updatedStudent = {
                 nisn,
                 nama,
                 kelas,
                 gender,
-                photo: APP_STATE.capturedEditPhoto || existingStudent?.photo || `https://placehold.co/150x150/1e3a8a/ffffff?text=${encodeURIComponent(nama)}`
+                photo: APP_STATE.capturedEditPhoto || existingStudent.photo || `https://placehold.co/150x150/1e3a8a/ffffff?text=${encodeURIComponent(nama)}`
             };
 
-            try {
-                if (originalNisn !== nisn) {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', originalNisn));
-                }
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', nisn), updatedStudent);
+            // Update local memory and cache
+            APP_STATE.students[index] = updatedStudent;
+            localStorage.setItem('smp_students_cache', JSON.stringify(APP_STATE.students));
+            renderStudentDirectory();
 
-                if (APP_STATE.gasUrl) {
-                    fetch(APP_STATE.gasUrl, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            action: 'edit_student',
-                            originalNisn: originalNisn,
-                            nisn: nisn,
-                            nama: nama,
-                            kelas: kelas,
-                            gender: gender
-                        })
-                    }).catch(err => console.warn('GAS Edit Sync warning:', err));
+            // Try Cloud Firestore sync
+            if (auth.currentUser) {
+                try {
+                    if (originalNisn !== nisn) {
+                        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', originalNisn));
+                    }
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', nisn), updatedStudent);
+                } catch (err) {
+                    console.warn("Update Firestore notice:", err);
                 }
-
-                closeEditStudentModal();
-                showToast("Data siswa diperbarui & tersimpan langsung ke Spreadsheet!", "success");
-            } catch (err) {
-                console.error("Gagal edit siswa:", err);
-                showToast("Gagal memperbarui data siswa", "error");
             }
+
+            closeEditStudentModal();
+            showToast("Data siswa berhasil diperbarui", "success");
         }
 
         async function deleteStudent(nisn) {
             if (!APP_STATE.isAdminAuthenticated) { openAdminAuth(); return; }
             if (confirm(`Hapus data siswa dengan NISN ${nisn}?`)) {
-                try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', nisn));
+                APP_STATE.students = APP_STATE.students.filter(s => s.nisn !== nisn);
+                localStorage.setItem('smp_students_cache', JSON.stringify(APP_STATE.students));
+                renderStudentDirectory();
 
-                    if (APP_STATE.gasUrl) {
-                        fetch(APP_STATE.gasUrl, {
-                            method: 'POST',
-                            mode: 'no-cors',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ action: 'delete_student', nisn: nisn })
-                        }).catch(err => console.warn('GAS Delete Sync warning:', err));
+                if (auth.currentUser) {
+                    try {
+                        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', nisn));
+                    } catch (err) {
+                        console.warn("Delete Firestore notice:", err);
                     }
-
-                    showToast("Data siswa berhasil dihapus dari Cloud & Spreadsheet", "info");
-                } catch (err) {
-                    console.error("Gagal hapus siswa:", err);
-                    showToast("Gagal menghapus data siswa", "error");
                 }
+                showToast("Data siswa berhasil dihapus", "info");
             }
         }
 
@@ -1381,9 +1338,8 @@ function doPost(e) {
         }
 
         function syncLogToGoogleSheets(record) {
-            const urlToUse = APP_STATE.gasUrl || gasScriptUrl;
-            if (!urlToUse || urlToUse.includes('GANTI_DENGAN_URL_ANDA')) return;
-            fetch(urlToUse, {
+            if (!APP_STATE.gasUrl) return;
+            fetch(APP_STATE.gasUrl, {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
@@ -1392,10 +1348,6 @@ function doPost(e) {
         }
 
         async function triggerManualScanMatch() {
-            if (!auth.currentUser) {
-                showToast("Menghubungkan ke database...", "warning");
-                return;
-            }
             if (!APP_STATE.isCameraActive) {
                 showToast("Nyalakan kamera terlebih dahulu!", "warning");
                 return;
@@ -1448,27 +1400,40 @@ function doPost(e) {
 
             displayScanResult(student, record);
 
-            // Save directly to Firestore
-            try {
-                const logDoc = doc(db, 'artifacts', appId, 'public', 'data', 'logs', String(record.id));
-                await setDoc(logDoc, record);
-                syncLogToGoogleSheets(record);
-            } catch (err) {
-                console.error("Gagal simpan log ke Firestore:", err);
-                showToast("Gagal menyimpan ke cloud!", "error");
+            // Update local memory and cache
+            APP_STATE.attendanceLogs.unshift(record);
+            localStorage.setItem('smp_logs_cache', JSON.stringify(APP_STATE.attendanceLogs));
+            renderRecentScanTicker();
+            renderRecapTable();
+            renderSpreadsheetGrid();
+
+            // Firestore Sync
+            if (auth.currentUser) {
+                try {
+                    const logDoc = doc(db, 'artifacts', appId, 'public', 'data', 'logs', String(record.id));
+                    await setDoc(logDoc, record);
+                } catch (err) {
+                    console.warn("Gagal simpan log ke Firestore:", err);
+                }
             }
+
+            syncLogToGoogleSheets(record);
 
             setTimeout(() => { APP_STATE.scanCooldown = false; }, 2000);
         }
 
         async function registerStudent(e) {
             e.preventDefault();
-            if (!auth.currentUser) return;
 
             const nisn = document.getElementById('regNisn').value.trim();
             const nama = document.getElementById('regNama').value.trim();
             const kelas = document.getElementById('regKelas').value;
             const gender = document.getElementById('regGender').value;
+
+            if (!nisn || !nama) {
+                showToast("Mohon isi NISN dan Nama Lengkap!", "warning");
+                return;
+            }
 
             if (APP_STATE.students.some(s => s.nisn === nisn)) {
                 showToast("NISN sudah terdaftar!", "error");
@@ -1483,27 +1448,35 @@ function doPost(e) {
                 photo: APP_STATE.capturedRegPhoto || `https://placehold.co/150x150/1e3a8a/ffffff?text=${encodeURIComponent(nama)}`
             };
 
-            try {
-                const studentDoc = doc(db, 'artifacts', appId, 'public', 'data', 'students', nisn);
-                await setDoc(studentDoc, newStudent);
+            // Immediate local state update
+            APP_STATE.students.push(newStudent);
+            localStorage.setItem('smp_students_cache', JSON.stringify(APP_STATE.students));
+            renderStudentDirectory();
 
-                if (APP_STATE.gasUrl) {
-                    fetch(APP_STATE.gasUrl, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'register_student', nisn, nama, kelas, gender })
-                    }).catch(err => console.warn('Sync student to GAS warning:', err));
+            // Firestore sync attempt
+            if (auth.currentUser) {
+                try {
+                    const studentDoc = doc(db, 'artifacts', appId, 'public', 'data', 'students', nisn);
+                    await setDoc(studentDoc, newStudent);
+                } catch (err) {
+                    console.warn("Gagal simpan ke Firestore Cloud:", err);
                 }
-
-                showToast(`Siswa ${nama} berhasil didaftarkan & tersimpan ke Spreadsheet!`, "success");
-                e.target.reset();
-                document.getElementById('regPhotoPreview').src = 'https://placehold.co/150x150/1e3a8a/ffffff?text=Foto';
-                APP_STATE.capturedRegPhoto = null;
-            } catch (err) {
-                console.error("Gagal daftar siswa:", err);
-                showToast("Gagal menyimpan ke Database Cloud", "error");
             }
+
+            // Sync with Google Apps Script
+            if (APP_STATE.gasUrl) {
+                fetch(APP_STATE.gasUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'register_student', nisn, nama, kelas, gender })
+                }).catch(err => console.log('Sync student to GAS notice:', err));
+            }
+
+            showToast(`Siswa ${nama} berhasil disimpan!`, "success");
+            e.target.reset();
+            document.getElementById('regPhotoPreview').src = 'https://placehold.co/150x150/1e3a8a/ffffff?text=Foto';
+            APP_STATE.capturedRegPhoto = null;
         }
 
         function saveJamMasukConfig() {
@@ -1518,7 +1491,6 @@ function doPost(e) {
         function saveGasUrl() {
             const url = document.getElementById('gasUrlInput')?.value.trim();
             if (url) {
-                gasScriptUrl = url;
                 APP_STATE.gasUrl = url;
                 localStorage.setItem('smp_gas_url', url);
                 showToast("URL Web App Google Apps Script disimpan", "success");
@@ -1528,8 +1500,11 @@ function doPost(e) {
         function copyGasScriptCode() {
             const code = document.getElementById('gasScriptCodeBlock')?.innerText;
             if (code) {
-                document.execCommand('copy');
-                showToast("Kode Google Apps Script disalin ke clipboard!", "success");
+                navigator.clipboard.writeText(code).then(() => {
+                    showToast("Kode Google Apps Script disalin ke clipboard!", "success");
+                }).catch(() => {
+                    showToast("Gagal menyalin kode.", "error");
+                });
             }
         }
 
@@ -1585,31 +1560,46 @@ function doPost(e) {
 
         async function deleteSingleLog(id) {
             if (!APP_STATE.isAdminAuthenticated) { openAdminAuth(); return; }
-            if (confirm("Hapus log absensi ini dari database cloud?")) {
-                try {
-                    const logRef = doc(db, 'artifacts', appId, 'public', 'data', 'logs', String(id));
-                    await deleteDoc(logRef);
-                    showToast("Log absensi dihapus dari cloud", "info");
-                } catch (err) {
-                    console.error("Gagal hapus log:", err);
-                    showToast("Gagal menghapus log dari cloud", "error");
+            if (confirm("Hapus log absensi ini dari database?")) {
+                APP_STATE.attendanceLogs = APP_STATE.attendanceLogs.filter(l => l.id !== id);
+                localStorage.setItem('smp_logs_cache', JSON.stringify(APP_STATE.attendanceLogs));
+                renderRecentScanTicker();
+                renderRecapTable();
+                renderSpreadsheetGrid();
+
+                if (auth.currentUser) {
+                    try {
+                        const logRef = doc(db, 'artifacts', appId, 'public', 'data', 'logs', String(id));
+                        await deleteDoc(logRef);
+                    } catch (err) {
+                        console.warn("Gagal hapus log Firestore:", err);
+                    }
                 }
+                showToast("Log absensi dihapus", "info");
             }
         }
 
         async function clearAttendanceHistory() {
             if (!APP_STATE.isAdminAuthenticated) { openAdminAuth(); return; }
-            if (confirm("Kosongkan seluruh riwayat absensi di database cloud?")) {
-                try {
-                    for (const log of APP_STATE.attendanceLogs) {
-                        const logRef = doc(db, 'artifacts', appId, 'public', 'data', 'logs', String(log.id));
-                        await deleteDoc(logRef);
+            if (confirm("Kosongkan seluruh riwayat absensi?")) {
+                const logsToDelete = [...APP_STATE.attendanceLogs];
+                APP_STATE.attendanceLogs = [];
+                localStorage.setItem('smp_logs_cache', JSON.stringify([]));
+                renderRecentScanTicker();
+                renderRecapTable();
+                renderSpreadsheetGrid();
+
+                if (auth.currentUser) {
+                    try {
+                        for (const log of logsToDelete) {
+                            const logRef = doc(db, 'artifacts', appId, 'public', 'data', 'logs', String(log.id));
+                            await deleteDoc(logRef);
+                        }
+                    } catch (err) {
+                        console.warn("Gagal bersihkan log Firestore:", err);
                     }
-                    showToast("Seluruh riwayat absensi dibersihkan", "info");
-                } catch (err) {
-                    console.error("Gagal bersihkan log:", err);
-                    showToast("Gagal membersihkan log", "error");
                 }
+                showToast("Seluruh riwayat absensi dibersihkan", "info");
             }
         }
 
@@ -1726,6 +1716,16 @@ function doPost(e) {
         window.onload = function () {
             setInterval(updateClock, 1000);
             updateClock();
+
+            if (APP_STATE.students.length === 0) {
+                seedDefaultStudents();
+            } else {
+                renderStudentDirectory();
+            }
+
+            renderRecentScanTicker();
+            renderRecapTable();
+            renderSpreadsheetGrid();
 
             const gasInput = document.getElementById('gasUrlInput');
             if (APP_STATE.gasUrl && gasInput) gasInput.value = APP_STATE.gasUrl;
